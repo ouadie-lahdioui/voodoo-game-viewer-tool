@@ -20,11 +20,13 @@
 </head>
 <body>
 <div id="app" class="container">
+
   <section class="section section-container" style="padding-bottom: 10px;">
     <div class="box">
       <search-games title="Search Games" @search-games-db="searchGames" :search="search" />
     </div>
   </section>
+
   <section class="section section-container" style="padding-top: 24px; padding-bottom: 5px;">
     <h2 class="title">Games</h2>
     <game v-for="(game, index) in games"
@@ -33,11 +35,19 @@
           @save-game="onAddOrUpdateGame"
           @delete-game="deleteGame" />
   </section>
+
   <section class="section section-container" style="padding-bottom: 10px;">
     <div class="box">
       <add-update-game title="Add Game" @save-game="onAddOrUpdateGame" />
     </div>
   </section>
+
+  <section class="section section-container" style="padding-bottom: 10px;">
+    <div class="box">
+      <button @click="populateGames" class="button is-info">Populate Games</button>  <!-- Populate button -->
+    </div>
+  </section>
+
 </div>
 <script>
   const AddUpdateGame = {
@@ -255,7 +265,13 @@
           .then((response) => {
             this.games = response.data
           })
-      }
+      },
+      populateGames () {
+        return axios.post(`${this.apiURL}/populate`)
+          .then((response) => {
+            console.log('Games populated successfully:', response.data);
+        })
+      },      
     },
     beforeMount () {
       axios.get(this.apiURL)

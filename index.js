@@ -1,9 +1,13 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const db = require('./models');
-const { Op } = db.Sequelize;
+const { fetchJson, formatGame } = require('./utils');
 
 const app = express();
+
+const { Op } = db.Sequelize;
+const ANDROID_GAMES_URL = "https://interview-marketing-eng-dev.s3.eu-west-1.amazonaws.com/android.top100.json";
+const IOS_GAMES_URL = "https://interview-marketing-eng-dev.s3.eu-west-1.amazonaws.com/ios.top100.json";
 
 app.use(bodyParser.json());
 app.use(express.static(`${__dirname}/static`));
@@ -71,7 +75,32 @@ app.post('/api/games/search', async (req, res) => {
     res.status(500).send({ error: 'Internal server error' });
   }
 });
-  
+
+
+/**
+ * Populate database with the top 100 apps
+ */
+app.post('/api/games/populate', async (req, res) => {
+  try {
+    const [androidGames, iosGames] = await Promise.all([
+        fetchJson(ANDROID_GAMES_URL),
+        fetchJson(IOS_GAMES_URL)
+    ]);
+
+    // Rule should be clarify with the product owner, Top 100 games of both ios and android or per platform? I'll choose top 100 per platform for the test
+    const games = [
+        ...androidGames.flat().slice(0, 100).map(game => formatGame(game)),
+        ...iosGames.flat().slice(0, 100).map(game => formatGame(game))
+    ];
+    
+    await db.Game.bulkCreate(games, { ignoreDuplicates: true }); // ignoreDuplicates with effect as Primary id key is auto increment
+
+    return res.status(200).json({ message: "Successfully insert games to database", count: games.length });
+  } catch (error) {
+      console.error("***Error populating database:", error);
+      return res.status(500).json({ message: "Internal server error", error: error.toString() });
+  }
+});
   
 app.listen(3000, () => {
   console.log('Server is up on port 3000');
