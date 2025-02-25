@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const db = require('./models');
+const { Op } = db.Sequelize;
 
 const app = express();
 
@@ -52,6 +53,26 @@ app.put('/api/games/:id', (req, res) => {
 });
 
 
+app.post('/api/games/search', async (req, res) => {
+  try {
+    const { name, platform } = req.body;
+
+    const filterBy = {};
+
+    if (name) filterBy.name = { [Op.like]: `%${name}%` };
+
+    if (platform) filterBy.platform = { [Op.like]: `%${platform}%` };
+
+    const games = await db.Game.findAll({ where: filterBy });
+
+    res.status(200).json(games);
+  } catch (err) {
+    console.error('***Error searching games', err);
+    res.status(500).send({ error: 'Internal server error' });
+  }
+});
+  
+  
 app.listen(3000, () => {
   console.log('Server is up on port 3000');
 });

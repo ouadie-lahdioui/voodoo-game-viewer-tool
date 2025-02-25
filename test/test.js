@@ -1,6 +1,7 @@
 const request = require('supertest');
 var assert = require('assert');
 const app = require('../index');
+const { platform } = require('os');
 
 /**
  * Testing create game endpoint
@@ -60,7 +61,6 @@ describe('GET /api/games', function () {
     });
 });
 
-
 /**
  * Testing update game endpoint
  */
@@ -91,6 +91,168 @@ describe('PUT /api/games/1', function () {
                 assert.strictEqual(result.body.bundleId, 'test.newBundle.id');
                 assert.strictEqual(result.body.appVersion, '1.0.1');
                 assert.strictEqual(result.body.isPublished, false);
+                done();
+            });
+    });
+});
+
+/**
+ * Testing search games endpoint
+ */
+describe('POST /api/games/search', function () {
+    
+    it('Should returns all games when no body provided', function (done) {
+        request(app)
+            .post('/api/games/search')
+            .send({})
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end((err, result) => {
+                if (err) return done(err);
+
+                assert(Array.isArray(result.body), "Response should be an array");
+                
+                assert.strictEqual(result.body.length, 1);
+                assert.strictEqual(result.body[0].id, 1);
+                assert.strictEqual(result.body[0].publisherId, '999000999');
+                assert.strictEqual(result.body[0].name, 'Test App Updated');
+                assert.strictEqual(result.body[0].platform, 'android');
+                assert.strictEqual(result.body[0].storeId, '5678')
+                assert.strictEqual(result.body[0].bundleId, 'test.newBundle.id')
+                assert.strictEqual(result.body[0].appVersion, '1.0.1')
+                assert.strictEqual(result.body[0].isPublished, false)
+       
+                done();
+            });
+    });
+
+    it('Should returns an empty array when no game find by name', function (done) {
+        request(app)
+            .post('/api/games/search')
+            .send({ name: "unknown-game" })
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end((err, result) => {
+                if (err) return done(err);
+
+                assert(Array.isArray(result.body), "Response should be an array");
+                assert.strictEqual(result.body.length, 0, "Response should be an empty array");
+
+                done();
+            });
+    });
+
+    it('Should returns an empty array when no game find by platform', function (done) {
+        request(app)
+            .post('/api/games/search')
+            .send({ platform: "unknown-platform" })
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end((err, result) => {
+                if (err) return done(err);
+
+                assert(Array.isArray(result.body), "Response should be an array");
+                assert.strictEqual(result.body.length, 0, "Response should be an empty array");
+
+                done();
+            });
+    });
+
+    it('Should find game by name', function (done) {
+        request(app)
+            .post('/api/games/search')
+            .send({ name: "aPp" }) // Check name attribute case insensitive at the same time
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end((err, result) => {
+                if (err) return done(err);
+
+                assert(Array.isArray(result.body), "Response should be an array");
+                
+                assert.strictEqual(result.body.length, 1);
+                assert.strictEqual(result.body[0].id, 1);
+                assert.strictEqual(result.body[0].publisherId, '999000999');
+                assert.strictEqual(result.body[0].name, 'Test App Updated');
+                assert.strictEqual(result.body[0].platform, 'android');
+                assert.strictEqual(result.body[0].storeId, '5678')
+                assert.strictEqual(result.body[0].bundleId, 'test.newBundle.id')
+                assert.strictEqual(result.body[0].appVersion, '1.0.1')
+                assert.strictEqual(result.body[0].isPublished, false)
+       
+                done();
+            });
+    });
+
+    it('Should find game by platform', function (done) {
+        request(app)
+            .post('/api/games/search')
+            .send({ platform: "android" })
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end((err, result) => {
+                if (err) return done(err);
+
+                assert(Array.isArray(result.body), "Response should be an array");
+                
+                assert.strictEqual(result.body.length, 1);
+                assert.strictEqual(result.body[0].id, 1);
+                assert.strictEqual(result.body[0].publisherId, '999000999');
+                assert.strictEqual(result.body[0].name, 'Test App Updated');
+                assert.strictEqual(result.body[0].platform, 'android');
+                assert.strictEqual(result.body[0].storeId, '5678')
+                assert.strictEqual(result.body[0].bundleId, 'test.newBundle.id')
+                assert.strictEqual(result.body[0].appVersion, '1.0.1')
+                assert.strictEqual(result.body[0].isPublished, false)
+       
+                done();
+            });
+    });
+
+    it('Should find game by name and platform', function (done) {
+        request(app)
+            .post('/api/games/search')
+            .send({ name: "aPp", platform: "anDRoid" }) // Check platform attribute case insensitive at the same time
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end((err, result) => {
+                if (err) return done(err);
+
+                assert(Array.isArray(result.body), "Response should be an array");
+                
+                assert.strictEqual(result.body.length, 1);
+                assert.strictEqual(result.body[0].id, 1);
+                assert.strictEqual(result.body[0].publisherId, '999000999');
+                assert.strictEqual(result.body[0].name, 'Test App Updated');
+                assert.strictEqual(result.body[0].platform, 'android');
+                assert.strictEqual(result.body[0].storeId, '5678')
+                assert.strictEqual(result.body[0].bundleId, 'test.newBundle.id')
+                assert.strictEqual(result.body[0].appVersion, '1.0.1')
+                assert.strictEqual(result.body[0].isPublished, false)
+       
+                done();
+            });
+    });
+
+    it('Should returns and empty array when no game found by name and platform', function (done) {
+        request(app)
+            .post('/api/games/search')
+            .send({ name: "aPp", platform: "ios" })
+            .set('Accept', 'application/json')
+            .expect('Content-Type', /json/)
+            .expect(200)
+            .end((err, result) => {
+                if (err) return done(err);
+
+                assert(Array.isArray(result.body), "Response should be an array");
+                
+                assert.strictEqual(result.body.length, 0);
+       
                 done();
             });
     });
@@ -130,4 +292,3 @@ describe('GET /api/games', function () {
             });
     });
 });
-
